@@ -21,4 +21,8 @@ app.post("/login", (req, res) => {
   });
 });
 
+app.post("/protected", auth, (req, res) => {
+    res.send("Inside protector");
+   });
+
 app.listen(3000);
