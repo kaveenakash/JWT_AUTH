@@ -1,19 +1,27 @@
 const express = require("express");
 const app = express();
 const jwt = require("jsonwebtoken");
+const cors = require("cors");
 let refreshTokens = [];
 app.use(express.json());
+app.use(cors());
 
 function auth(req, res, next) {
   let token = req.headers["authorization"];
   token = token.split(" ")[1]; // Access token
 
   jwt.verify(token, "access", (err, user) => {
-    if (!err) {
+    if (user) {
       req.user = user;
       next();
+    } else if (err.message === "jwt expired") {
+      return res.json({
+        success: false,
+        message: "Access token expired",
+      });
     } else {
-      return res.status(403).json({ message: "User not authenticated" });
+      console.log(err)
+      return res.status(403).json({success:false,message:'User not authenticated'})
     }
   });
 }
@@ -40,9 +48,11 @@ app.post("/protected", auth, (req, res) => {
 });
 
 app.post("/renewAccessToken", (req, res) => {
+
   const refreshToken = req.body.token;
   if (!refreshToken || !refreshTokens.includes(refreshToken)) {
     return res.status(403).json({
+      success: false,
       message: "User not authenticated",
     });
   }
@@ -52,14 +62,16 @@ app.post("/renewAccessToken", (req, res) => {
         expiresIn: "20s",
       });
       return res.status(201).json({
+        success: true,
         accessToken,
       });
     } else {
       return res.status(403).json({
+        success: false,
         message: "User not authenticated",
       });
     }
   });
 });
 
-app.listen(3000);
+app.listen(5000);
